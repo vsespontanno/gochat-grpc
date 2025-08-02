@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "github.com/vsespontanno/gochat-grpc/internal/proto";
+
+
+service Greeter {
+    rpc SayHelloAgain(HelloReq) returns (HelloReply);
+}
+
+message HelloReq {
+    string name = 1;
+}
+
+message HelloReply {
+    string name = 1;
+}
