@@ -40,11 +40,17 @@ func NewKafkaConsumer(broker, groupID string, grpcClient client.GRPCClient) (*Ka
 	return &KafkaConsumer{consumer: consumer, grpcClient: grpcClient}, nil
 }
 
-func (p *KafkaProducer) Produce(topic, value string) error {
-	err := p.producer.Produce(&kafka.Message{
+func (p *KafkaProducer) Produce(topic string, msg models.Message) error {
+	value, err := json.Marshal(msg)
+	if err != nil {
+		log.Printf("Failed to marshal message: %v", err)
+		return err
+	}
+	err = p.producer.Produce(&kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-		Value:          []byte(value),
+		Value:          value,
 	}, nil)
+
 	if err != nil {
 		log.Println("Error while producing msg: ", err)
 		return err
@@ -62,7 +68,13 @@ func (c *KafkaConsumer) Subscribe(topic string) error {
 	for {
 		msg, err := c.consumer.ReadMessage(-1)
 		if err == nil {
-			fmt.Printf("Received message: %s\n", string(msg.Value))
+			var message models.Message
+			err := json.Unmarshal(msg.Value, &message)
+			if err != nil {
+				log.Printf("Failed to unmarshal message: %v", err)
+				return err
+			}
+			fmt.Printf("Received message: %s\n", message)
 		} else {
 			fmt.Printf("Error while consuming msg: %v\n", err)
 		}

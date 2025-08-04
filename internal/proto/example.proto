@@ -3,14 +3,41 @@ syntax = "proto3";
 option go_package = "github.com/vsespontanno/gochat-grpc/internal/proto";
 
 
-service Greeter {
-    rpc SayHelloAgain(HelloReq) returns (HelloReply);
+service Sender {
+    rpc SendMessage(Message) returns (None);
 }
 
-message HelloReq {
-    string name = 1;
+service Auth {
+    rpc Register(RegisterRequest) returns (RegisterResponse);
+    rpc Login(LoginRequest) returns (LoginResponse);
 }
 
-message HelloReply {
-    string name = 1;
+message Message {
+    string Sender = 1;
+    string Recipient = 2;
+    string Content = 3;
+    int64 Timestamp = 4;
+}
+
+message None {}
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string FirstName = 3;
+  string LastName = 4;
+}
+
+message RegisterResponse {
+  int64 user_id = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  int32 app_id = 3;
+}
+
+message LoginResponse {
+  string token = 1;
 }

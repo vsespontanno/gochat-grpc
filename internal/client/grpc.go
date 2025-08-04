@@ -7,11 +7,13 @@ import (
 	"github.com/vsespontanno/gochat-grpc/internal/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 type GRPCClient struct {
 	Endpoint string
-	pClient  proto.GreeterClient
+	pClient  proto.SenderClient
+	aClient  proto.AuthClient
 }
 
 func NewGRPCClient(endpoint string) (*GRPCClient, error) {
@@ -20,14 +22,24 @@ func NewGRPCClient(endpoint string) (*GRPCClient, error) {
 		fmt.Println("Error while making new client: ", err)
 		return nil, err
 	}
-	client := proto.NewGreeterClient(conn)
+	client := proto.NewSenderClient(conn)
 	return &GRPCClient{Endpoint: endpoint, pClient: client}, nil
 }
 
-func (c *GRPCClient) SayHelloAgain(ctx context.Context, in *proto.HelloReq) (*proto.HelloReply, error) {
-	resp, err := c.pClient.SayHelloAgain(ctx, in)
+func (c *GRPCClient) SendMessage(ctx context.Context, in *proto.Message) (*proto.None, error) {
+	md := metadata.Pairs("authorization", "Bearer your_jwt_token")
+	ctx = metadata.NewOutgoingContext(context.Background(), md)
+	_, err := c.pClient.SendMessage(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	return resp, nil
+	return nil, nil
+}
+
+func (c *GRPCClient) Register(ctx context.Context, in *proto.RegisterRequest) (*proto.RegisterResponse, error) {
+	return c.aClient.Register(ctx, in)
+}
+
+func (c *GRPCClient) Login(ctx context.Context, in *proto.LoginRequest) (*proto.LoginResponse, error) {
+	return c.aClient.Login(ctx, in)
 }

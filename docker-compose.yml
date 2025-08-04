@@ -1,5 +1,17 @@
 version: "3"
 services:
+  postgres:
+      image: postgres:15
+      restart: always
+      environment:
+        POSTGRES_USER: ${PG_USER}
+        POSTGRES_PASSWORD: ${PG_PASSWORD}
+        POSTGRES_DB: ${PG_DB}
+      ports:
+        - "5432:5432"
+      volumes:
+        - pg_data:/var/lib/postgresql/data
+
   zookeeper:
     image: confluentinc/cp-zookeeper
     container_name: zookeeper
@@ -22,3 +34,10 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+ 
+
+
+volumes:
+  pg_data:
+  
