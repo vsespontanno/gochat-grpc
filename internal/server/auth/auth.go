@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"log"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/vsespontanno/gochat-grpc/internal/models"
@@ -11,11 +13,13 @@ import (
 
 type AuthService struct {
 	proto.UnimplementedAuthServer
-	pg *pg.UserStore
+	pg         *pg.UserStore
+	jwtService *JwtService
+	tokenTTL   time.Duration
 }
 
-func NewAuthService(pg *pg.UserStore) *AuthService {
-	return &AuthService{pg: pg}
+func NewAuthService(pg *pg.UserStore, jwtService *JwtService, tokenTTL time.Duration) *AuthService {
+	return &AuthService{pg: pg, jwtService: jwtService, tokenTTL: tokenTTL}
 }
 
 func (s *AuthService) Register(ctx context.Context, req *proto.RegisterRequest) (*proto.RegisterResponse, error) {
@@ -24,12 +28,12 @@ func (s *AuthService) Register(ctx context.Context, req *proto.RegisterRequest) 
 	params.Password = req.GetPassword()
 	params.FirstName = req.GetFirstName()
 	params.LastName = req.GetLastName()
-	params.ID = uuid.New()
+	params.ID = int64(uuid.New().ID())
 	err := s.pg.SaveUser(ctx, &params)
 	if err != nil {
 		return nil, err
 	}
-	return &proto.RegisterResponse{UserId: int64(params.ID.ID())}, nil
+	return &proto.RegisterResponse{UserId: params.ID}, nil
 }
 
 func (s *AuthService) Login(ctx context.Context, req *proto.LoginRequest) (*proto.LoginResponse, error) {
@@ -43,5 +47,10 @@ func (s *AuthService) Login(ctx context.Context, req *proto.LoginRequest) (*prot
 	if user.Password != authParams.Password {
 		return nil, err
 	}
-	return &proto.LoginResponse{Token: "poka vuyt ho"}, nil
+	token, err := s.jwtService.GenerateToken(user, s.tokenTTL)
+	if err != nil {
+		log.Fatalf("failed to generate token: %v", err)
+	}
+
+	return &proto.LoginResponse{Token: token}, nil
 }

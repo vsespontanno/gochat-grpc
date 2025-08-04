@@ -7,7 +7,6 @@ import (
 	"github.com/vsespontanno/gochat-grpc/internal/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 )
 
 type GRPCClient struct {
@@ -27,8 +26,6 @@ func NewGRPCClient(endpoint string) (*GRPCClient, error) {
 }
 
 func (c *GRPCClient) SendMessage(ctx context.Context, in *proto.Message) (*proto.None, error) {
-	md := metadata.Pairs("authorization", "Bearer your_jwt_token")
-	ctx = metadata.NewOutgoingContext(context.Background(), md)
 	_, err := c.pClient.SendMessage(ctx, in)
 	if err != nil {
 		return nil, err

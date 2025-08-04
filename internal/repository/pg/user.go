@@ -24,7 +24,7 @@ func NewUserStore(db *sql.DB) *UserStore {
 func (s *UserStore) SaveUser(ctx context.Context, user *models.User) error {
 	query := s.builder.Insert("users").
 		Columns("userid", "firstname", "lastname", "email", "password").
-		Values(user.ID.ID(), user.FirstName, user.LastName, user.Email, user.Password)
+		Values(user.ID, user.FirstName, user.LastName, user.Email, user.Password)
 	sqlStr, args, err := query.ToSql()
 	if err != nil {
 		return fmt.Errorf("building insert query: %w", err)
@@ -39,7 +39,7 @@ func (s *UserStore) SaveUser(ctx context.Context, user *models.User) error {
 }
 
 func (s *UserStore) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	query := s.builder.Select("firstname", "lastname", "email", "password").
+	query := s.builder.Select("userid", "firstname", "lastname", "email", "password").
 		From("users").
 		Where(sq.Eq{"email": email})
 	sqlStr, args, err := query.ToSql()
@@ -48,7 +48,7 @@ func (s *UserStore) GetUserByEmail(ctx context.Context, email string) (*models.U
 	}
 	var user models.User
 	err = s.db.QueryRowContext(ctx, sqlStr, args...).Scan(
-		&user.FirstName, &user.LastName, &user.Email, &user.Password,
+		&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("executing select: %w", err)
