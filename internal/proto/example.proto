@@ -4,7 +4,7 @@ option go_package = "github.com/vsespontanno/gochat-grpc/internal/proto";
 
 
 service Sender {
-    rpc SendMessage(Message) returns (None);
+    rpc SendMessage(MessageRequest) returns (MessageResponse);
 }
 
 service Auth {
@@ -12,11 +12,15 @@ service Auth {
     rpc Login(LoginRequest) returns (LoginResponse);
 }
 
-message Message {
+message MessageRequest {
     string Sender = 1;
     string Recipient = 2;
     string Content = 3;
     int64 Timestamp = 4;
+}
+
+message MessageResponse {
+    string desc = 1;
 }
 
 message None {}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net"
@@ -16,10 +15,7 @@ import (
 	serv "github.com/vsespontanno/gochat-grpc/internal/server"
 	"github.com/vsespontanno/gochat-grpc/internal/server/auth"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 )
 
 func main() {
@@ -59,49 +55,49 @@ func makeGRPCTransport(endpoint string, kp *messaging.KafkaProducer, authService
 	}
 	defer ln.Close()
 
-	server := grpc.NewServer(grpc.Creds(insecure.NewCredentials()), grpc.UnaryInterceptor(NewJWTUnaryInterceptor(jwtService)))
+	server := grpc.NewServer(grpc.Creds(insecure.NewCredentials()) /* , grpc.UnaryInterceptor(NewJWTUnaryInterceptor(jwtService)) */)
 	proto.RegisterSenderServer(server, serv.NewGRPCServer(kp))
-	proto.RegisterAuthServer(server, authService)
+	// proto.RegisterAuthServer(server, authService)
 	fmt.Println("GRPC transport running on port", endpoint)
 	return server.Serve(ln)
 
 }
 
-func jwtFromContext(ctx context.Context) (string, error) {
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return "", status.Errorf(codes.InvalidArgument, "не удалось получить метаданные")
-	}
-	authHeaders, ok := md["authorization"]
-	if !ok || len(authHeaders) == 0 {
-		return "", status.Errorf(codes.Unauthenticated, "отсутствует заголовок авторизации")
-	}
-	authHeader := authHeaders[0]
-	return authHeader, nil
-}
+// func jwtFromContext(ctx context.Context) (string, error) {
+// 	md, ok := metadata.FromIncomingContext(ctx)
+// 	if !ok {
+// 		return "", status.Errorf(codes.InvalidArgument, "не удалось получить метаданные")
+// 	}
+// 	authHeaders, ok := md["authorization"]
+// 	if !ok || len(authHeaders) == 0 {
+// 		return "", status.Errorf(codes.Unauthenticated, "отсутствует заголовок авторизации")
+// 	}
+// 	authHeader := authHeaders[0]
+// 	return authHeader, nil
+// }
 
-func NewJWTUnaryInterceptor(jwtService *auth.JwtService) grpc.UnaryServerInterceptor {
-	return func(
-		ctx context.Context,
-		req interface{},
-		info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler,
+// func NewJWTUnaryInterceptor(jwtService *auth.JwtService) grpc.UnaryServerInterceptor {
+// 	return func(
+// 		ctx context.Context,
+// 		req interface{},
+// 		info *grpc.UnaryServerInfo,
+// 		handler grpc.UnaryHandler,
 
-	) (interface{}, error) {
-		method, _ := grpc.Method(ctx)
+// 	) (interface{}, error) {
+// 		method, _ := grpc.Method(ctx)
 
-		if method == "/Auth/Login" || method == "/Auth/Register" {
-			return handler(ctx, req)
-		}
-		token, err := jwtFromContext(ctx)
-		if err != nil {
-			return nil, err
-		}
+// 		if method == "/Auth/Login" || method == "/Auth/Register" {
+// 			return handler(ctx, req)
+// 		}
+// 		token, err := jwtFromContext(ctx)
+// 		if err != nil {
+// 			return nil, err
+// 		}
 
-		if ok, err := jwtService.ValidateToken(token); !ok || err != nil {
-			return nil, status.Errorf(codes.Unauthenticated, "недействительный JWT")
-		}
-		log.Println("JWT validation success")
-		return handler(ctx, req)
-	}
-}
+// 		if ok, err := jwtService.ValidateToken(token); !ok || err != nil {
+// 			return nil, status.Errorf(codes.Unauthenticated, "недействительный JWT")
+// 		}
+// 		log.Println("JWT validation success")
+// 		return handler(ctx, req)
+// 	}
+// }

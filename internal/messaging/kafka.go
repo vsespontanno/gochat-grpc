@@ -30,9 +30,10 @@ func NewKafkaProducer(broker string) (*KafkaProducer, error) {
 
 func NewKafkaConsumer(broker, groupID string, grpcClient client.GRPCClient) (*KafkaConsumer, error) {
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": broker,
-		"group.id":          groupID,
-		"auto.offset.reset": "earliest",
+		"bootstrap.servers":  broker,
+		"group.id":           groupID,
+		"auto.offset.reset":  "earliest",
+		"enable.auto.commit": false,
 	})
 	if err != nil {
 		return nil, err
@@ -60,26 +61,26 @@ func (p *KafkaProducer) Produce(topic string, msg models.Message) error {
 	return nil
 }
 
-func (c *KafkaConsumer) Subscribe(topic string) error {
+func (c *KafkaConsumer) Subscribe(topic string) {
 	err := c.consumer.Subscribe(topic, nil)
 	if err != nil {
-		return err
+		log.Fatalf("Failed to consume: %v", err)
 	}
-	for {
-		msg, err := c.consumer.ReadMessage(-1)
-		if err == nil {
-			var message models.Message
-			err := json.Unmarshal(msg.Value, &message)
-			if err != nil {
-				log.Printf("Failed to unmarshal message: %v", err)
-				return err
+	go func() {
+		for {
+			msg, err := c.consumer.ReadMessage(-1)
+			if err == nil {
+				var message models.Message
+				err := json.Unmarshal(msg.Value, &message)
+				if err != nil {
+					log.Fatalf("Failed to unmarshal message: %v", err)
+				}
+				fmt.Printf("Received message: %s\n", message)
+			} else {
+				log.Fatalf("Error while consuming msg: %v\n", err)
 			}
-			fmt.Printf("Received message: %s\n", message)
-		} else {
-			fmt.Printf("Error while consuming msg: %v\n", err)
 		}
-
-	}
+	}()
 }
 
 func (c *KafkaConsumer) ProcessMessage(msg []byte) (bool, error) {

@@ -7,12 +7,13 @@ toolchain go1.23.11
 require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/confluentinc/confluent-kafka-go v1.9.2
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
+	github.com/pkg/errors v0.9.1
 	google.golang.org/grpc v1.74.2
 	google.golang.org/protobuf v1.36.6
-	github.com/golang-jwt/jwt/v5 v5.3.0 
 )
 
 require (

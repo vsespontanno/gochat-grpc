@@ -25,7 +25,7 @@ func NewGRPCClient(endpoint string) (*GRPCClient, error) {
 	return &GRPCClient{Endpoint: endpoint, pClient: client}, nil
 }
 
-func (c *GRPCClient) SendMessage(ctx context.Context, in *proto.Message) (*proto.None, error) {
+func (c *GRPCClient) SendMessage(ctx context.Context, in *proto.MessageRequest) (*proto.MessageResponse, error) {
 	_, err := c.pClient.SendMessage(ctx, in)
 	if err != nil {
 		return nil, err

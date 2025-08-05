@@ -26,7 +26,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SenderClient interface {
-	SendMessage(ctx context.Context, in *Message, opts ...grpc.CallOption) (*None, error)
+	SendMessage(ctx context.Context, in *MessageRequest, opts ...grpc.CallOption) (*MessageResponse, error)
 }
 
 type senderClient struct {
@@ -37,9 +37,9 @@ func NewSenderClient(cc grpc.ClientConnInterface) SenderClient {
 	return &senderClient{cc}
 }
 
-func (c *senderClient) SendMessage(ctx context.Context, in *Message, opts ...grpc.CallOption) (*None, error) {
+func (c *senderClient) SendMessage(ctx context.Context, in *MessageRequest, opts ...grpc.CallOption) (*MessageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(None)
+	out := new(MessageResponse)
 	err := c.cc.Invoke(ctx, Sender_SendMessage_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (c *senderClient) SendMessage(ctx context.Context, in *Message, opts ...grp
 // All implementations must embed UnimplementedSenderServer
 // for forward compatibility.
 type SenderServer interface {
-	SendMessage(context.Context, *Message) (*None, error)
+	SendMessage(context.Context, *MessageRequest) (*MessageResponse, error)
 	mustEmbedUnimplementedSenderServer()
 }
 
@@ -62,7 +62,7 @@ type SenderServer interface {
 // pointer dereference when methods are called.
 type UnimplementedSenderServer struct{}
 
-func (UnimplementedSenderServer) SendMessage(context.Context, *Message) (*None, error) {
+func (UnimplementedSenderServer) SendMessage(context.Context, *MessageRequest) (*MessageResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendMessage not implemented")
 }
 func (UnimplementedSenderServer) mustEmbedUnimplementedSenderServer() {}
@@ -87,7 +87,7 @@ func RegisterSenderServer(s grpc.ServiceRegistrar, srv SenderServer) {
 }
 
 func _Sender_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Message)
+	in := new(MessageRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func _Sender_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: Sender_SendMessage_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SenderServer).SendMessage(ctx, req.(*Message))
+		return srv.(SenderServer).SendMessage(ctx, req.(*MessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
