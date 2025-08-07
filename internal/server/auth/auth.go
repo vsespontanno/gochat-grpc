@@ -51,6 +51,5 @@ func (s *AuthService) Login(ctx context.Context, req *proto.LoginRequest) (*prot
 	if err != nil {
 		log.Fatalf("failed to generate token: %v", err)
 	}
-
-	return &proto.LoginResponse{Token: token}, nil
+	return &proto.LoginResponse{Token: token, UserId: user.ID}, nil
 }

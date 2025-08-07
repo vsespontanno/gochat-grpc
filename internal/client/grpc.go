@@ -21,8 +21,9 @@ func NewGRPCClient(endpoint string) (*GRPCClient, error) {
 		fmt.Println("Error while making new client: ", err)
 		return nil, err
 	}
-	client := proto.NewSenderClient(conn)
-	return &GRPCClient{Endpoint: endpoint, pClient: client}, nil
+	pClient := proto.NewSenderClient(conn)
+	aClient := proto.NewAuthClient(conn)
+	return &GRPCClient{Endpoint: endpoint, pClient: pClient, aClient: aClient}, nil
 }
 
 func (c *GRPCClient) SendMessage(ctx context.Context, in *proto.MessageRequest) (*proto.MessageResponse, error) {

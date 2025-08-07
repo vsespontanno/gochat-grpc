@@ -18,6 +18,7 @@ type KafkaProducer struct {
 type KafkaConsumer struct {
 	consumer   *kafka.Consumer
 	grpcClient client.GRPCClient
+	userID     string
 }
 
 func NewKafkaProducer(broker string) (*KafkaProducer, error) {
@@ -28,7 +29,7 @@ func NewKafkaProducer(broker string) (*KafkaProducer, error) {
 	return &KafkaProducer{producer: producer}, nil
 }
 
-func NewKafkaConsumer(broker, groupID string, grpcClient client.GRPCClient) (*KafkaConsumer, error) {
+func NewKafkaConsumer(broker, groupID string, grpcClient client.GRPCClient, userID string) (*KafkaConsumer, error) {
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers":  broker,
 		"group.id":           groupID,
@@ -38,7 +39,7 @@ func NewKafkaConsumer(broker, groupID string, grpcClient client.GRPCClient) (*Ka
 	if err != nil {
 		return nil, err
 	}
-	return &KafkaConsumer{consumer: consumer, grpcClient: grpcClient}, nil
+	return &KafkaConsumer{consumer: consumer, grpcClient: grpcClient, userID: userID}, nil
 }
 
 func (p *KafkaProducer) Produce(topic string, msg models.Message) error {
@@ -75,6 +76,10 @@ func (c *KafkaConsumer) Subscribe(topic string) {
 				if err != nil {
 					log.Fatalf("Failed to unmarshal message: %v", err)
 				}
+				if message.Recipient != c.userID {
+					continue
+				}
+
 				fmt.Printf("Received message: %s\n", message)
 			} else {
 				log.Fatalf("Error while consuming msg: %v\n", err)
@@ -90,7 +95,7 @@ func (c *KafkaConsumer) ProcessMessage(msg []byte) (bool, error) {
 		return false, err
 	}
 
-	if message.Recipient != "me" {
+	if message.Recipient != c.userID {
 		return false, nil
 	}
 

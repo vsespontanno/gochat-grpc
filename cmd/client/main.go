@@ -7,7 +7,6 @@ import (
 
 	"github.com/vsespontanno/gochat-grpc/internal/client"
 	"github.com/vsespontanno/gochat-grpc/internal/messaging"
-	"github.com/vsespontanno/gochat-grpc/internal/proto"
 )
 
 const endpoint = "localhost:8081"
@@ -15,8 +14,10 @@ const endpoint = "localhost:8081"
 type Command string
 
 const (
-	HELP  Command = "h"
-	WRITE Command = "w"
+	HELP     Command = "h"
+	WRITE    Command = "w"
+	REGISTER Command = "reg"
+	LOGIN    Command = "log"
 )
 
 func main() {
@@ -26,11 +27,29 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	kafkaConsumer, err := messaging.NewKafkaConsumer("localhost:9092", "my-group", *grpcClient)
+	fmt.Print("Connected to server, choose command:\nreg - register\nlog - login\n")
+	var c Command
+	_, err = fmt.Scan(&c)
+	if err != nil {
+		log.Fatal("ой")
+	}
+	if c == REGISTER {
+		for {
+			err = client.Register(ctx, grpcClient)
+			if err == nil {
+				break
+			}
+		}
+
+	}
+	userID := client.Login(ctx, grpcClient)
+
+	kafkaConsumer, err := messaging.NewKafkaConsumer("localhost:9092", fmt.Sprintf("my-group-%v", userID), *grpcClient, fmt.Sprintf("%v", userID))
 	if err != nil {
 		log.Fatal(err)
 	}
 	kafkaConsumer.Subscribe("test")
+
 	for {
 		var c Command
 
@@ -42,33 +61,7 @@ func main() {
 		}
 		switch c {
 		case WRITE:
-			var recipient, con string
-
-			fmt.Println("enter recipient")
-			_, err = fmt.Scan(&recipient)
-			if err != nil {
-				log.Fatal("ой 2")
-			}
-
-			fmt.Println("enter message")
-			_, err = fmt.Scan(&con)
-			if err != nil {
-				log.Fatal("ой 3")
-			}
-
-			req := &proto.MessageRequest{
-				Sender:    "me",
-				Recipient: recipient,
-				Content:   con,
-			}
-			_, err := grpcClient.SendMessage(ctx, req)
-			if err != nil {
-				fmt.Printf("failed to send message: %s", err.Error())
-				continue
-			}
-
-			fmt.Println("message sent")
-
+			client.WriteMessage(ctx, grpcClient, userID)
 		}
 	}
 }

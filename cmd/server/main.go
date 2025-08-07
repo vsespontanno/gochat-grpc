@@ -57,7 +57,7 @@ func makeGRPCTransport(endpoint string, kp *messaging.KafkaProducer, authService
 
 	server := grpc.NewServer(grpc.Creds(insecure.NewCredentials()) /* , grpc.UnaryInterceptor(NewJWTUnaryInterceptor(jwtService)) */)
 	proto.RegisterSenderServer(server, serv.NewGRPCServer(kp))
-	// proto.RegisterAuthServer(server, authService)
+	proto.RegisterAuthServer(server, authService)
 	fmt.Println("GRPC transport running on port", endpoint)
 	return server.Serve(ln)
 
